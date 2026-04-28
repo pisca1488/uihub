@@ -5548,12 +5548,12 @@ function UILibrary.Section:BindKey(sett, keyCallback, modeCallback)
     local element = cheatBase.Content.ElementContent.Keybind
 
     -- Расширяем element чтобы вместить обе кнопки
-    element.Size = UDim2.new(0.4, 0, 1, 0)
+    element.Size = UDim2.new(0.45, 0, 1, 0)
 
-    -- modeBtn слева, занимает ~48% ширины element
+    -- modeBtn слева, занимает ~47% ширины element
     local modeBtn = Instance.new("TextButton")
     modeBtn.Name = "ModeButton"
-    modeBtn.Size = UDim2.new(0.48, 0, 0.7, 0)
+    modeBtn.Size = UDim2.new(0.47, 0, 0.7, 0)
     modeBtn.Position = UDim2.new(0, 0, 0.15, 0)
     modeBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
     modeBtn.BorderSizePixel = 0
@@ -5569,9 +5569,9 @@ function UILibrary.Section:BindKey(sett, keyCallback, modeCallback)
     modeBtnCorner.CornerRadius = UDim.new(0, 4)
     modeBtnCorner.Parent = modeBtn
 
-    -- Keybind текст справа, занимает ~48% ширины element, плотно к modeBtn
-    element.Text.Size = UDim2.new(0.48, 0, 0.75, 0)
-    element.Text.Position = UDim2.new(0.52, 0, 0.5, 0)
+    -- Keybind текст справа, занимает ~47% ширины element, плотно к modeBtn (зазор 6%)
+    element.Text.Size = UDim2.new(0.47, 0, 0.75, 0)
+    element.Text.Position = UDim2.new(0.53, 0, 0.5, 0)
     element.Text.AnchorPoint = Vector2.new(0, 0.5)
     element.Text.TextXAlignment = Enum.TextXAlignment.Center
 
@@ -5606,18 +5606,27 @@ function UILibrary.Section:BindKey(sett, keyCallback, modeCallback)
         element.Text.Text = "[ ? ]"
 
         conn = game:GetService("UserInputService").InputBegan:Connect(function(input, gp)
+            if gp then return end -- Игнорируем ввод в GUI
+            
             if input.UserInputType == Enum.UserInputType.Keyboard then
+                -- Поддержка всех клавиш клавиатуры
                 currentKb = input.KeyCode
                 rebinding = false
                 updateKeyText()
                 conn:Disconnect()
                 if keyCallback then keyCallback(currentKb) end
             elseif input.UserInputType == Enum.UserInputType.MouseButton1 or
-                   input.UserInputType == Enum.UserInputType.MouseButton2 then
+                   input.UserInputType == Enum.UserInputType.MouseButton2 or
+                   input.UserInputType == Enum.UserInputType.MouseButton3 then
+                -- Поддержка всех кнопок мыши
                 currentKb = input.UserInputType
                 rebinding = false
                 updateKeyText()
                 conn:Disconnect()
+                if keyCallback then keyCallback(currentKb) end
+            end
+        end)
+    end)
                 if keyCallback then keyCallback(currentKb) end
             end
         end)
