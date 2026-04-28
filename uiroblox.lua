@@ -5570,18 +5570,25 @@ function UILibrary.Section:BindKey(sett, keyCallback, modeCallback)
     element.Text.AnchorPoint = Vector2.new(0, 0.5)
     element.Text.TextXAlignment = Enum.TextXAlignment.Center
 
+    local modeOrder = { "Toggle", "Hold", "Always" }
     local currentMode = sett.DefaultMode or "Toggle"
     local currentKb = sett.DefaultKey or Enum.KeyCode.Unknown
     local rebinding = false
     local conn
 
     local function updateKeyText()
-        if currentKb == Enum.KeyCode.Unknown then
+        if currentMode == "Always" then
+            element.Text.Text = "---"
+            element.Text.TextColor3 = Color3.fromRGB(80, 80, 80)
+        elseif currentKb == Enum.KeyCode.Unknown then
             element.Text.Text = "..."
+            element.Text.TextColor3 = Color3.fromRGB(100, 100, 100)
         elseif type(currentKb) == "string" then
             element.Text.Text = currentKb
+            element.Text.TextColor3 = Color3.fromRGB(100, 100, 100)
         else
             element.Text.Text = currentKb.Name
+            element.Text.TextColor3 = Color3.fromRGB(100, 100, 100)
         end
     end
 
@@ -5589,13 +5596,17 @@ function UILibrary.Section:BindKey(sett, keyCallback, modeCallback)
         if currentMode == "Hold" then
             modeBtn.TextColor3 = Color3.fromRGB(180, 180, 180)
             modeBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-        else
+        elseif currentMode == "Always" then
+            modeBtn.TextColor3 = Color3.fromRGB(120, 200, 120)
+            modeBtn.BackgroundColor3 = Color3.fromRGB(30, 45, 30)
+        else -- Toggle
             modeBtn.TextColor3 = Color3.fromRGB(100, 100, 100)
             modeBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
         end
     end
 
     setupEffects(element, element.HoverFrame):Connect(function()
+        if currentMode == "Always" then return end -- в режиме Always бинд не нужен
         if rebinding then return end
         rebinding = true
         element.Text.Text = "[ ? ]"
@@ -5621,9 +5632,14 @@ function UILibrary.Section:BindKey(sett, keyCallback, modeCallback)
     end)
 
     modeBtn.MouseButton1Click:Connect(function()
-        currentMode = currentMode == "Toggle" and "Hold" or "Toggle"
+        local idx = 1
+        for i, v in ipairs(modeOrder) do
+            if v == currentMode then idx = i break end
+        end
+        currentMode = modeOrder[(idx % #modeOrder) + 1]
         modeBtn.Text = currentMode
         updateModeStyle()
+        updateKeyText()
         if modeCallback then modeCallback(currentMode) end
     end)
 
@@ -5645,6 +5661,7 @@ function UILibrary.Section:BindKey(sett, keyCallback, modeCallback)
         currentMode = mode
         modeBtn.Text = mode
         updateModeStyle()
+        updateKeyText()
     end
     functions.getValue = function() return currentKb end
     functions.getMode  = function() return currentMode end
