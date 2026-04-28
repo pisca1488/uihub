@@ -5536,8 +5536,8 @@ function UILibrary.Section:BindKey(sett, keyCallback, modeCallback)
     -- Добавляем кнопку режима справа от keybind
     local modeBtn = Instance.new("TextButton")
     modeBtn.Name = "ModeButton"
-    modeBtn.Size = UDim2.new(0, 60, 1, -6)
-    modeBtn.Position = UDim2.new(1, -68, 0, 3)
+    modeBtn.Size = UDim2.new(0, 55, 0, 22)
+    modeBtn.Position = UDim2.new(1, -60, 0.5, -11)
     modeBtn.AnchorPoint = Vector2.new(0, 0)
     modeBtn.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
     modeBtn.BorderSizePixel = 0
