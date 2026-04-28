@@ -5600,8 +5600,7 @@ function UILibrary.Section:BindKey(sett, keyCallback, modeCallback)
         end
     end
 
-    -- Клик на keybind для ребинда
-    element.MouseButton1Click:Connect(function()
+    setupEffects(element, element.HoverFrame):Connect(function()
         if rebinding then return end
         rebinding = true
         element.Text.Text = "[ ? ]"
@@ -5610,16 +5609,6 @@ function UILibrary.Section:BindKey(sett, keyCallback, modeCallback)
             if gp then return end -- Игнорируем ввод в GUI
             
             if input.UserInputType == Enum.UserInputType.Keyboard then
-                -- Escape убирает бинд
-                if input.KeyCode == Enum.KeyCode.Escape then
-                    currentKb = Enum.KeyCode.Unknown
-                    rebinding = false
-                    updateKeyText()
-                    conn:Disconnect()
-                    if keyCallback then keyCallback(Enum.KeyCode.Unknown) end
-                    return
-                end
-                
                 -- Поддержка всех клавиш клавиатуры
                 currentKb = input.KeyCode
                 rebinding = false
@@ -5634,6 +5623,10 @@ function UILibrary.Section:BindKey(sett, keyCallback, modeCallback)
                 rebinding = false
                 updateKeyText()
                 conn:Disconnect()
+                if keyCallback then keyCallback(currentKb) end
+            end
+        end)
+    end)
                 if keyCallback then keyCallback(currentKb) end
             end
         end)
