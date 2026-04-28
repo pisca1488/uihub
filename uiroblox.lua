@@ -5600,7 +5600,8 @@ function UILibrary.Section:BindKey(sett, keyCallback, modeCallback)
         end
     end
 
-    setupEffects(element, element.HoverFrame):Connect(function()
+    -- Клик на keybind для ребинда
+    element.MouseButton1Click:Connect(function()
         if rebinding then return end
         rebinding = true
         element.Text.Text = "[ ? ]"
@@ -5633,10 +5634,6 @@ function UILibrary.Section:BindKey(sett, keyCallback, modeCallback)
                 rebinding = false
                 updateKeyText()
                 conn:Disconnect()
-                if keyCallback then keyCallback(currentKb) end
-            end
-        end)
-    end)
                 if keyCallback then keyCallback(currentKb) end
             end
         end)
