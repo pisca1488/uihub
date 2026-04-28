@@ -5627,10 +5627,6 @@ function UILibrary.Section:BindKey(sett, keyCallback, modeCallback)
             end
         end)
     end)
-                if keyCallback then keyCallback(currentKb) end
-            end
-        end)
-    end)
 
     modeBtn.MouseButton1Click:Connect(function()
         currentMode = currentMode == "Toggle" and "Hold" or "Toggle"
