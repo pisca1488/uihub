@@ -5533,12 +5533,22 @@ function UILibrary.Section:BindKey(sett, keyCallback, modeCallback)
 
     local element = cheatBase.Content.ElementContent.Keybind
 
-    -- Добавляем кнопку режима справа от keybind
+    -- Растягиваем сам Keybind элемент чтобы вместить обе кнопки
+    -- Keybind по умолчанию занимает 20% ширины, делаем его шире
+    element.Size = UDim2.new(0.42, 0, 1, 0)
+
+    -- Keybind кнопка занимает левую половину element
+    element.Text.Size = UDim2.new(0.5, -4, 0.75, 0)
+    element.Text.Position = UDim2.new(0, 4, 0.5, 0)
+    element.Text.AnchorPoint = Vector2.new(0, 0.5)
+    element.Text.TextXAlignment = Enum.TextXAlignment.Center
+
+    -- Кнопка режима занимает правую половину element
     local modeBtn = Instance.new("TextButton")
     modeBtn.Name = "ModeButton"
-    modeBtn.Size = UDim2.new(0, 55, 0, 22)
-    modeBtn.Position = UDim2.new(1, -60, 0.5, -11)
-    modeBtn.AnchorPoint = Vector2.new(0, 0)
+    modeBtn.Size = UDim2.new(0.48, -2, 0.75, 0)
+    modeBtn.Position = UDim2.new(0.52, 0, 0.5, 0)
+    modeBtn.AnchorPoint = Vector2.new(0, 0.5)
     modeBtn.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
     modeBtn.BorderSizePixel = 0
     modeBtn.Text = sett.DefaultMode or "Toggle"
@@ -5546,11 +5556,11 @@ function UILibrary.Section:BindKey(sett, keyCallback, modeCallback)
     modeBtn.TextSize = 11
     modeBtn.Font = Enum.Font.GothamBold
     modeBtn.AutoButtonColor = false
-    modeBtn.ZIndex = 115
-    modeBtn.Parent = cheatBase.Content
+    modeBtn.ZIndex = element.ZIndex + 2
+    modeBtn.Parent = element
 
     local modeBtnCorner = Instance.new("UICorner")
-    modeBtnCorner.CornerRadius = UDim.new(0, 6)
+    modeBtnCorner.CornerRadius = UDim.new(0, 5)
     modeBtnCorner.Parent = modeBtn
 
     local currentMode = sett.DefaultMode or "Toggle"
@@ -5558,35 +5568,35 @@ function UILibrary.Section:BindKey(sett, keyCallback, modeCallback)
     local rebinding = false
     local conn
 
-    -- Обновляем размер keybind чтобы не перекрывал кнопку режима
-    local function updateSize()
-        local textBounds = math.clamp(element.Text.TextBounds.X, 10, element.Parent.AbsoluteSize.X) + 20
-        TweenService:Create(element, TI, {
-            Size = UDim2.fromScale(math.min(textBounds / element.Parent.AbsoluteSize.X, 0.45), 1)
-        }):Play()
+    local function updateKeyText()
+        if type(currentKb) == "string" then
+            element.Text.Text = currentKb
+        elseif currentKb == Enum.KeyCode.Unknown then
+            element.Text.Text = "..."
+        else
+            element.Text.Text = currentKb.Name
+        end
     end
 
     -- Keybind логика (клик = начать слушать)
     setupEffects(element, element.HoverFrame):Connect(function()
         if rebinding then return end
+        -- Не реагируем если кликнули на modeBtn
         rebinding = true
-        element.Text.Text = "..."
-        updateSize()
+        element.Text.Text = "[ ? ]"
 
         conn = game:GetService("UserInputService").InputBegan:Connect(function(input, gp)
             if input.UserInputType == Enum.UserInputType.Keyboard then
                 currentKb = input.KeyCode
                 rebinding = false
-                element.Text.Text = currentKb.Name
-                updateSize()
+                updateKeyText()
                 conn:Disconnect()
                 if keyCallback then keyCallback(currentKb) end
             elseif input.UserInputType == Enum.UserInputType.MouseButton1 or
                    input.UserInputType == Enum.UserInputType.MouseButton2 then
                 currentKb = input.UserInputType
                 rebinding = false
-                element.Text.Text = currentKb.Name
-                updateSize()
+                updateKeyText()
                 conn:Disconnect()
                 if keyCallback then keyCallback(currentKb) end
             end
@@ -5597,11 +5607,9 @@ function UILibrary.Section:BindKey(sett, keyCallback, modeCallback)
     modeBtn.MouseButton1Click:Connect(function()
         currentMode = currentMode == "Toggle" and "Hold" or "Toggle"
         modeBtn.Text = currentMode
-        if currentMode == "Hold" then
-            modeBtn.TextColor3 = Color3.fromRGB(0, 191, 255)
-        else
-            modeBtn.TextColor3 = Color3.fromRGB(138, 43, 226)
-        end
+        modeBtn.TextColor3 = currentMode == "Hold"
+            and Color3.fromRGB(0, 191, 255)
+            or  Color3.fromRGB(138, 43, 226)
         if modeCallback then modeCallback(currentMode) end
     end)
 
@@ -5612,31 +5620,23 @@ function UILibrary.Section:BindKey(sett, keyCallback, modeCallback)
         TweenService:Create(modeBtn, TI, { BackgroundColor3 = Color3.fromRGB(35, 35, 35) }):Play()
     end)
 
-    -- Установить дефолтный ключ
-    if sett.DefaultKey and sett.DefaultKey ~= Enum.KeyCode.Unknown then
-        element.Text.Text = sett.DefaultKey.Name
-        updateSize()
-    end
+    updateKeyText()
 
     functions.setValue = function(key)
         currentKb = key
-        element.Text.Text = type(key) == "string" and key or key.Name
-        updateSize()
+        updateKeyText()
     end
 
     functions.setMode = function(mode)
         currentMode = mode
         modeBtn.Text = mode
-        modeBtn.TextColor3 = mode == "Hold" and Color3.fromRGB(0, 191, 255) or Color3.fromRGB(138, 43, 226)
+        modeBtn.TextColor3 = mode == "Hold"
+            and Color3.fromRGB(0, 191, 255)
+            or  Color3.fromRGB(138, 43, 226)
     end
 
-    functions.getValue = function()
-        return currentKb
-    end
-
-    functions.getMode = function()
-        return currentMode
-    end
+    functions.getValue = function() return currentKb end
+    functions.getMode  = function() return currentMode end
 
     local meta = setmetatable({ element = element, UI = cheatBase }, functions)
 
