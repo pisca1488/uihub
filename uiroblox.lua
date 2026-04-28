@@ -5154,6 +5154,13 @@ function UILibrary.Section:Slider(sett, callback)
         end
     )
 
+    -- Фикс: отпускаем слайдер даже если мышь вышла за пределы элемента
+    game:GetService("UserInputService").InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            holding = false
+        end
+    end)
+
     if sett.Default then
         local scale = math.clamp(tonumber(sett.Default) / sett.Max, 0, 1)
         functions.setValue(tonumber(sett.Default), scale)
