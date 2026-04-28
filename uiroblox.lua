@@ -5518,153 +5518,133 @@ function UILibrary.Section:Dropdown(sett, callback)
     return meta
 end
 
-return UILibrary
-
-
 -- ============================================================
--- CUSTOM BIND WIDGET - Keybind + Mode в одной строке
+-- BindKey: Keybind + Toggle/Hold в одной строке
+-- Использование: Section:BindKey({ Title = "Aimbot", DefaultKey = Enum.KeyCode.Unknown, DefaultMode = "Toggle" }, keyCallback, modeCallback)
 -- ============================================================
-function Section:BindKey(options, keyCallback, modeCallback)
-    local Title = options.Title or "Bind"
-    local DefaultKey = options.DefaultKey or Enum.KeyCode.Unknown
-    local DefaultMode = options.DefaultMode or "Toggle"
-    
-    local currentKey = DefaultKey
-    local currentMode = DefaultMode
-    
-    -- Создаём контейнер для бинда
-    local bindContainer = Instance.new("Frame")
-    bindContainer.Name = "BindKeyContainer"
-    bindContainer.Size = UDim2.new(1, 0, 0, 35)
-    bindContainer.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
-    bindContainer.BorderSizePixel = 0
-    bindContainer.Parent = self.Content
-    
-    local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, 8)
-    corner.Parent = bindContainer
-    
-    -- Название слева
-    local titleLabel = Instance.new("TextLabel")
-    titleLabel.Name = "Title"
-    titleLabel.Size = UDim2.new(0.35, 0, 1, 0)
-    titleLabel.Position = UDim2.new(0, 10, 0, 0)
-    titleLabel.BackgroundTransparency = 1
-    titleLabel.Text = Title
-    titleLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
-    titleLabel.TextSize = 14
-    titleLabel.Font = Enum.Font.GothamSemibold
-    titleLabel.TextXAlignment = Enum.TextXAlignment.Left
-    titleLabel.Parent = bindContainer
-    
-    -- Keybind кнопка (центр)
-    local keybindBtn = Instance.new("TextButton")
-    keybindBtn.Name = "KeybindButton"
-    keybindBtn.Size = UDim2.new(0.3, 0, 0, 25)
-    keybindBtn.Position = UDim2.new(0.37, 0, 0.5, -12.5)
-    keybindBtn.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
-    keybindBtn.Text = currentKey.Name
-    keybindBtn.TextColor3 = Color3.fromRGB(150, 150, 150)
-    keybindBtn.TextSize = 12
-    keybindBtn.Font = Enum.Font.GothamBold
-    keybindBtn.AutoButtonColor = false
-    keybindBtn.Parent = bindContainer
-    
-    local keybindCorner = Instance.new("UICorner")
-    keybindCorner.CornerRadius = UDim.new(0, 6)
-    keybindCorner.Parent = keybindBtn
-    
-    -- Mode кнопка (справа)
+function UILibrary.Section:BindKey(sett, keyCallback, modeCallback)
+    local functions = {}
+    functions.__index = functions
+
+    -- Создаём базу через Keybind шаблон
+    local cheatBase = generateCheatBase("Keybind", sett)
+    cheatBase.Parent = self.Section.Border.Content
+    cheatBase.LayoutOrder = getLayoutOrder(self.Section.Border.Content)
+
+    local element = cheatBase.Content.ElementContent.Keybind
+
+    -- Добавляем кнопку режима справа от keybind
     local modeBtn = Instance.new("TextButton")
     modeBtn.Name = "ModeButton"
-    modeBtn.Size = UDim2.new(0.25, 0, 0, 25)
-    modeBtn.Position = UDim2.new(0.7, 0, 0.5, -12.5)
+    modeBtn.Size = UDim2.new(0, 60, 1, -6)
+    modeBtn.Position = UDim2.new(1, -68, 0, 3)
+    modeBtn.AnchorPoint = Vector2.new(0, 0)
     modeBtn.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
-    modeBtn.Text = currentMode
+    modeBtn.BorderSizePixel = 0
+    modeBtn.Text = sett.DefaultMode or "Toggle"
     modeBtn.TextColor3 = Color3.fromRGB(138, 43, 226)
-    modeBtn.TextSize = 12
+    modeBtn.TextSize = 11
     modeBtn.Font = Enum.Font.GothamBold
     modeBtn.AutoButtonColor = false
-    modeBtn.Parent = bindContainer
-    
-    local modeCorner = Instance.new("UICorner")
-    modeCorner.CornerRadius = UDim.new(0, 6)
-    modeCorner.Parent = modeBtn
-    
-    -- Keybind логика
-    local listening = false
-    keybindBtn.MouseButton1Click:Connect(function()
-        if listening then return end
-        listening = true
-        keybindBtn.Text = "..."
-        keybindBtn.TextColor3 = Color3.fromRGB(255, 100, 100)
-        
-        local conn
-        conn = game:GetService("UserInputService").InputBegan:Connect(function(input, gameProcessed)
-            if gameProcessed then return end
-            
-            if input.KeyCode ~= Enum.KeyCode.Unknown then
-                if input.KeyCode == Enum.KeyCode.Escape then
-                    currentKey = Enum.KeyCode.Unknown
-                else
-                    currentKey = input.KeyCode
-                end
-            elseif input.UserInputType == Enum.UserInputType.MouseButton1 then
-                currentKey = "MouseButton1"
-            elseif input.UserInputType == Enum.UserInputType.MouseButton2 then
-                currentKey = "MouseButton2"
-            end
-            
-            keybindBtn.Text = type(currentKey) == "string" and currentKey or currentKey.Name
-            keybindBtn.TextColor3 = Color3.fromRGB(150, 150, 150)
-            listening = false
-            conn:Disconnect()
-            
-            if keyCallback then
-                keyCallback(currentKey)
+    modeBtn.ZIndex = 115
+    modeBtn.Parent = cheatBase.Content
+
+    local modeBtnCorner = Instance.new("UICorner")
+    modeBtnCorner.CornerRadius = UDim.new(0, 6)
+    modeBtnCorner.Parent = modeBtn
+
+    local currentMode = sett.DefaultMode or "Toggle"
+    local currentKb = sett.DefaultKey or Enum.KeyCode.Unknown
+    local rebinding = false
+    local conn
+
+    -- Обновляем размер keybind чтобы не перекрывал кнопку режима
+    local function updateSize()
+        local textBounds = math.clamp(element.Text.TextBounds.X, 10, element.Parent.AbsoluteSize.X) + 20
+        TweenService:Create(element, TI, {
+            Size = UDim2.fromScale(math.min(textBounds / element.Parent.AbsoluteSize.X, 0.45), 1)
+        }):Play()
+    end
+
+    -- Keybind логика (клик = начать слушать)
+    setupEffects(element, element.HoverFrame):Connect(function()
+        if rebinding then return end
+        rebinding = true
+        element.Text.Text = "..."
+        updateSize()
+
+        conn = game:GetService("UserInputService").InputBegan:Connect(function(input, gp)
+            if input.UserInputType == Enum.UserInputType.Keyboard then
+                currentKb = input.KeyCode
+                rebinding = false
+                element.Text.Text = currentKb.Name
+                updateSize()
+                conn:Disconnect()
+                if keyCallback then keyCallback(currentKb) end
+            elseif input.UserInputType == Enum.UserInputType.MouseButton1 or
+                   input.UserInputType == Enum.UserInputType.MouseButton2 then
+                currentKb = input.UserInputType
+                rebinding = false
+                element.Text.Text = currentKb.Name
+                updateSize()
+                conn:Disconnect()
+                if keyCallback then keyCallback(currentKb) end
             end
         end)
     end)
-    
-    -- Mode toggle логика
+
+    -- Mode кнопка: Toggle <-> Hold
     modeBtn.MouseButton1Click:Connect(function()
         currentMode = currentMode == "Toggle" and "Hold" or "Toggle"
         modeBtn.Text = currentMode
-        
-        if modeCallback then
-            modeCallback(currentMode)
+        if currentMode == "Hold" then
+            modeBtn.TextColor3 = Color3.fromRGB(0, 191, 255)
+        else
+            modeBtn.TextColor3 = Color3.fromRGB(138, 43, 226)
         end
+        if modeCallback then modeCallback(currentMode) end
     end)
-    
-    -- Hover эффекты
-    keybindBtn.MouseEnter:Connect(function()
-        keybindBtn.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
-    end)
-    keybindBtn.MouseLeave:Connect(function()
-        keybindBtn.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
-    end)
-    
+
     modeBtn.MouseEnter:Connect(function()
-        modeBtn.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+        TweenService:Create(modeBtn, TI, { BackgroundColor3 = Color3.fromRGB(50, 50, 50) }):Play()
     end)
     modeBtn.MouseLeave:Connect(function()
-        modeBtn.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+        TweenService:Create(modeBtn, TI, { BackgroundColor3 = Color3.fromRGB(35, 35, 35) }):Play()
     end)
-    
-    return {
-        SetKey = function(key)
-            currentKey = key
-            keybindBtn.Text = type(key) == "string" and key or key.Name
-        end,
-        SetMode = function(mode)
-            currentMode = mode
-            modeBtn.Text = mode
-        end,
-        GetKey = function()
-            return currentKey
-        end,
-        GetMode = function()
-            return currentMode
-        end
-    }
+
+    -- Установить дефолтный ключ
+    if sett.DefaultKey and sett.DefaultKey ~= Enum.KeyCode.Unknown then
+        element.Text.Text = sett.DefaultKey.Name
+        updateSize()
+    end
+
+    functions.setValue = function(key)
+        currentKb = key
+        element.Text.Text = type(key) == "string" and key or key.Name
+        updateSize()
+    end
+
+    functions.setMode = function(mode)
+        currentMode = mode
+        modeBtn.Text = mode
+        modeBtn.TextColor3 = mode == "Hold" and Color3.fromRGB(0, 191, 255) or Color3.fromRGB(138, 43, 226)
+    end
+
+    functions.getValue = function()
+        return currentKb
+    end
+
+    functions.getMode = function()
+        return currentMode
+    end
+
+    local meta = setmetatable({ element = element, UI = cheatBase }, functions)
+
+    self.oldSelf.oldSelf.oldSelf.UI[self.oldSelf.oldSelf.categoryUI.Name][self.oldSelf.SectionName][
+        self.Section.Name
+    ][sett.Title] = meta
+
+    return meta
 end
+
+return UILibrary
