@@ -5548,12 +5548,12 @@ function UILibrary.Section:BindKey(sett, keyCallback, modeCallback)
     local element = cheatBase.Content.ElementContent.Keybind
 
     -- Расширяем element чтобы вместить обе кнопки
-    element.Size = UDim2.new(0.45, 0, 1, 0)
+    element.Size = UDim2.new(0.5, 0, 1, 0)
 
-    -- modeBtn слева, занимает ~47% ширины element
+    -- modeBtn слева, занимает ~45% ширины element
     local modeBtn = Instance.new("TextButton")
     modeBtn.Name = "ModeButton"
-    modeBtn.Size = UDim2.new(0.47, 0, 0.7, 0)
+    modeBtn.Size = UDim2.new(0.45, 0, 0.7, 0)
     modeBtn.Position = UDim2.new(0, 0, 0.15, 0)
     modeBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
     modeBtn.BorderSizePixel = 0
@@ -5569,9 +5569,9 @@ function UILibrary.Section:BindKey(sett, keyCallback, modeCallback)
     modeBtnCorner.CornerRadius = UDim.new(0, 4)
     modeBtnCorner.Parent = modeBtn
 
-    -- Keybind текст справа, занимает ~47% ширины element, плотно к modeBtn (зазор 6%)
-    element.Text.Size = UDim2.new(0.47, 0, 0.75, 0)
-    element.Text.Position = UDim2.new(0.53, 0, 0.5, 0)
+    -- Keybind текст справа, занимает ~45% ширины element, с зазором 10%
+    element.Text.Size = UDim2.new(0.45, 0, 0.75, 0)
+    element.Text.Position = UDim2.new(0.55, 0, 0.5, 0)
     element.Text.AnchorPoint = Vector2.new(0, 0.5)
     element.Text.TextXAlignment = Enum.TextXAlignment.Center
 
@@ -5580,14 +5580,40 @@ function UILibrary.Section:BindKey(sett, keyCallback, modeCallback)
     local rebinding = false
     local conn
 
-    local function updateKeyText()
-        if currentKb == Enum.KeyCode.Unknown then
-            element.Text.Text = "..."
-        elseif type(currentKb) == "string" then
-            element.Text.Text = currentKb
-        else
-            element.Text.Text = currentKb.Name
+    -- Функция для сокращения названий клавиш
+    local function getShortKeyName(key)
+        if key == Enum.KeyCode.Unknown then
+            return "..."
         end
+        
+        -- Сокращения для мыши
+        if key == Enum.UserInputType.MouseButton1 then return "M1" end
+        if key == Enum.UserInputType.MouseButton2 then return "M2" end
+        if key == Enum.UserInputType.MouseButton3 then return "M3" end
+        if key == Enum.UserInputType.MouseButton4 then return "M4" end
+        if key == Enum.UserInputType.MouseButton5 then return "M5" end
+        
+        -- Сокращения для клавиатуры
+        local keyName = type(key) == "string" and key or key.Name
+        
+        -- Специальные клавиши
+        local shortcuts = {
+            LeftShift = "LShift", RightShift = "RShift",
+            LeftControl = "LCtrl", RightControl = "RCtrl",
+            LeftAlt = "LAlt", RightAlt = "RAlt",
+            CapsLock = "Caps", Return = "Enter",
+            Backspace = "Back", Delete = "Del",
+            Insert = "Ins", Home = "Home", End = "End",
+            PageUp = "PgUp", PageDown = "PgDn",
+            Space = "Space", Tab = "Tab",
+            Escape = "Esc"
+        }
+        
+        return shortcuts[keyName] or keyName
+    end
+
+    local function updateKeyText()
+        element.Text.Text = getShortKeyName(currentKb)
     end
 
     local function updateModeStyle()
@@ -5608,6 +5634,14 @@ function UILibrary.Section:BindKey(sett, keyCallback, modeCallback)
         conn = game:GetService("UserInputService").InputBegan:Connect(function(input, gp)
             if gp then return end -- Игнорируем ввод в GUI
             
+            -- ESC отменяет биндинг
+            if input.KeyCode == Enum.KeyCode.Escape then
+                rebinding = false
+                updateKeyText()
+                conn:Disconnect()
+                return
+            end
+            
             if input.UserInputType == Enum.UserInputType.Keyboard then
                 -- Поддержка всех клавиш клавиатуры
                 currentKb = input.KeyCode
@@ -5618,11 +5652,26 @@ function UILibrary.Section:BindKey(sett, keyCallback, modeCallback)
             elseif input.UserInputType == Enum.UserInputType.MouseButton1 or
                    input.UserInputType == Enum.UserInputType.MouseButton2 or
                    input.UserInputType == Enum.UserInputType.MouseButton3 then
-                -- Поддержка всех кнопок мыши
+                -- Поддержка кнопок мыши M1, M2, M3
                 currentKb = input.UserInputType
                 rebinding = false
                 updateKeyText()
                 conn:Disconnect()
+                if keyCallback then keyCallback(currentKb) end
+            end
+        end)
+        
+        -- Добавляем поддержку боковых кнопок мыши (M4, M5)
+        local mouseConn = game:GetService("UserInputService").InputBegan:Connect(function(input, gp)
+            if gp then return end
+            
+            if input.UserInputType == Enum.UserInputType.MouseButton4 or
+               input.UserInputType == Enum.UserInputType.MouseButton5 then
+                currentKb = input.UserInputType
+                rebinding = false
+                updateKeyText()
+                conn:Disconnect()
+                mouseConn:Disconnect()
                 if keyCallback then keyCallback(currentKb) end
             end
         end)
