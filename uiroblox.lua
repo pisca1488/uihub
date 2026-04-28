@@ -5550,12 +5550,16 @@ function UILibrary.Section:BindKey(sett, keyCallback, modeCallback)
     -- Уменьшаем keybind чтобы влезла кнопка режима рядом
     element.Size = UDim2.new(0.5, 0, 1, 0)
 
-    -- Кнопка режима добавляется в ElementContent (тот же контейнер что и keybind)
-    -- UIListLayout там Horizontal + Right, поэтому кнопка встанет ЛЕВЕЕ keybind
+    -- Сжимаем текст внутри keybind влево чтобы справа было место для modeBtn
+    element.Text.Size = UDim2.new(0.48, 0, 0.75, 0)
+    element.Text.Position = UDim2.new(0.02, 0, 0.5, 0)
+    element.Text.AnchorPoint = Vector2.new(0, 0.5)
+
+    -- modeBtn справа внутри того же element
     local modeBtn = Instance.new("TextButton")
     modeBtn.Name = "ModeButton"
-    modeBtn.Size = UDim2.new(0.5, -4, 0.7, 0)
-    modeBtn.AnchorPoint = Vector2.new(0, 0.5)
+    modeBtn.Size = UDim2.new(0.48, -2, 0.7, 0)
+    modeBtn.Position = UDim2.new(0.51, 0, 0.15, 0)
     modeBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
     modeBtn.BorderSizePixel = 0
     modeBtn.Text = sett.DefaultMode or "Toggle"
@@ -5564,8 +5568,7 @@ function UILibrary.Section:BindKey(sett, keyCallback, modeCallback)
     modeBtn.Font = Enum.Font.GothamSemibold
     modeBtn.AutoButtonColor = false
     modeBtn.ZIndex = element.ZIndex + 2
-    modeBtn.LayoutOrder = element.LayoutOrder - 1  -- встаёт левее keybind
-    modeBtn.Parent = cheatBase.Content.ElementContent
+    modeBtn.Parent = element
 
     local modeBtnCorner = Instance.new("UICorner")
     modeBtnCorner.CornerRadius = UDim.new(0, 4)
