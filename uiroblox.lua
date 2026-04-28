@@ -4109,6 +4109,14 @@ local function generateCheatBase(Cheat, sett)
     cheatBase.Content.ElementContent.Size = Size
     cheatBase.Content.Text.Size = UDim2.fromScale(XSize, 1)
 
+    -- Поддержка смещения элемента по X и Y
+    if sett.OffsetX or sett.OffsetY then
+        local ox = sett.OffsetX or 0
+        local oy = sett.OffsetY or 0
+        local p = cheatBase.Position
+        cheatBase.Position = UDim2.new(p.X.Scale, p.X.Offset + ox, p.Y.Scale, p.Y.Offset + oy)
+    end
+
     local Content = objectGenerator.new("Cheat", Cheat)
 
     if Content then
