@@ -5547,19 +5547,14 @@ function UILibrary.Section:BindKey(sett, keyCallback, modeCallback)
 
     local element = cheatBase.Content.ElementContent.Keybind
 
-    -- Уменьшаем keybind чтобы влезла кнопка режима рядом
-    element.Size = UDim2.new(0.5, 0, 1, 0)
+    -- Расширяем element чтобы вместить обе кнопки
+    element.Size = UDim2.new(0.4, 0, 1, 0)
 
-    -- Сжимаем текст внутри keybind влево чтобы справа было место для modeBtn
-    element.Text.Size = UDim2.new(0.48, 0, 0.75, 0)
-    element.Text.Position = UDim2.new(0.02, 0, 0.5, 0)
-    element.Text.AnchorPoint = Vector2.new(0, 0.5)
-
-    -- modeBtn справа внутри того же element
+    -- modeBtn слева, занимает ~48% ширины element
     local modeBtn = Instance.new("TextButton")
     modeBtn.Name = "ModeButton"
-    modeBtn.Size = UDim2.new(0.48, -2, 0.7, 0)
-    modeBtn.Position = UDim2.new(0.51, 0, 0.15, 0)
+    modeBtn.Size = UDim2.new(0.48, 0, 0.7, 0)
+    modeBtn.Position = UDim2.new(0, 0, 0.15, 0)
     modeBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
     modeBtn.BorderSizePixel = 0
     modeBtn.Text = sett.DefaultMode or "Toggle"
@@ -5573,6 +5568,12 @@ function UILibrary.Section:BindKey(sett, keyCallback, modeCallback)
     local modeBtnCorner = Instance.new("UICorner")
     modeBtnCorner.CornerRadius = UDim.new(0, 4)
     modeBtnCorner.Parent = modeBtn
+
+    -- Keybind текст справа, занимает ~48% ширины element, плотно к modeBtn
+    element.Text.Size = UDim2.new(0.48, 0, 0.75, 0)
+    element.Text.Position = UDim2.new(0.52, 0, 0.5, 0)
+    element.Text.AnchorPoint = Vector2.new(0, 0.5)
+    element.Text.TextXAlignment = Enum.TextXAlignment.Center
 
     local currentMode = sett.DefaultMode or "Toggle"
     local currentKb = sett.DefaultKey or Enum.KeyCode.Unknown
