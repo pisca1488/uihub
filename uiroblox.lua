@@ -5634,7 +5634,10 @@ function UILibrary.Section:BindKey(sett, keyCallback, modeCallback)
     modeBtn.MouseButton1Click:Connect(function()
         local idx = 1
         for i, v in ipairs(modeOrder) do
-            if v == currentMode then idx = i break end
+            if v == currentMode then
+                idx = i
+                break
+            end
         end
         currentMode = modeOrder[(idx % #modeOrder) + 1]
         modeBtn.Text = currentMode
