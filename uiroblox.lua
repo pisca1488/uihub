@@ -5547,7 +5547,7 @@ function UILibrary.Section:BindKey(sett, keyCallback, modeCallback)
     local modeBtn = Instance.new("TextButton")
     modeBtn.Name = "ModeButton"
     modeBtn.Size = UDim2.new(0.18, 0, 0.7, 0)
-    modeBtn.Position = UDim2.new(0.78, -4, 0.15, 0)
+    modeBtn.Position = UDim2.new(0.58, 0, 0.15, 0)
     modeBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
     modeBtn.BorderSizePixel = 0
     modeBtn.Text = sett.DefaultMode or "Toggle"
