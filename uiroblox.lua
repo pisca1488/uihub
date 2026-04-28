@@ -3247,12 +3247,11 @@ function UILibrary.new(gameName, userId, rank)
     window.Parent = GUI
 
     --// make UI draggable
-    -->> LogoHitbox
+    -->> LogoHitbox + full sidebar drag zone
 
     local Frame = Instance.new("Frame")
     Frame.BackgroundTransparency = 1
     Frame.Size = UDim2.fromScale(2, 2)
-
     Frame.AnchorPoint = Vector2.new(0.5, 0.5)
     Frame.Position = UDim2.fromScale(.5, .5)
 
@@ -3262,7 +3261,16 @@ function UILibrary.new(gameName, userId, rank)
     Frame.Parent = window.MainUI.Sidebar.ContentHolder.Cheats.Logo
     Frame.ZIndex = 300
 
+    -- Расширяем зону drag на весь сайдбар (UserInfo + Logo зона)
+    local SidebarDragFrame = Instance.new("Frame")
+    SidebarDragFrame.BackgroundTransparency = 1
+    SidebarDragFrame.Size = UDim2.fromScale(1, 1)
+    SidebarDragFrame.Position = UDim2.fromScale(0, 0)
+    SidebarDragFrame.ZIndex = 200
+    SidebarDragFrame.Parent = window.MainUI.Sidebar.ContentHolder.UserInfo
+
     local Drag = Draggable.Drag(window.MainUI, Frame)
+    local Drag2 = Draggable.Drag(window.MainUI, SidebarDragFrame)
 
     --// Customize the GUI
     window.Watermark.Text = ("hydrahub v2 | %s | %s"):format(userId, gameName)
@@ -5520,47 +5528,38 @@ end
 
 -- ============================================================
 -- BindKey: Keybind + Toggle/Hold в одной строке
--- Использование: Section:BindKey({ Title = "Aimbot", DefaultKey = Enum.KeyCode.Unknown, DefaultMode = "Toggle" }, keyCallback, modeCallback)
 -- ============================================================
 function UILibrary.Section:BindKey(sett, keyCallback, modeCallback)
     local functions = {}
     functions.__index = functions
 
-    -- Создаём базу через Keybind шаблон
     local cheatBase = generateCheatBase("Keybind", sett)
     cheatBase.Parent = self.Section.Border.Content
     cheatBase.LayoutOrder = getLayoutOrder(self.Section.Border.Content)
 
     local element = cheatBase.Content.ElementContent.Keybind
 
-    -- Растягиваем сам Keybind элемент чтобы вместить обе кнопки
-    -- Keybind по умолчанию занимает 20% ширины, делаем его шире
-    element.Size = UDim2.new(0.42, 0, 1, 0)
+    -- Keybind кнопка прижата вправо, занимает 22% ширины
+    element.Size = UDim2.new(0.22, 0, 1, 0)
 
-    -- Keybind кнопка занимает левую половину element
-    element.Text.Size = UDim2.new(0.5, -4, 0.75, 0)
-    element.Text.Position = UDim2.new(0, 4, 0.5, 0)
-    element.Text.AnchorPoint = Vector2.new(0, 0.5)
-    element.Text.TextXAlignment = Enum.TextXAlignment.Center
-
-    -- Кнопка режима занимает правую половину element
+    -- Кнопка режима СЛЕВА от keybind (между названием и keybind)
+    -- Стиль как у остальных элементов меню: тёмный фон, серый текст
     local modeBtn = Instance.new("TextButton")
     modeBtn.Name = "ModeButton"
-    modeBtn.Size = UDim2.new(0.48, -2, 0.75, 0)
-    modeBtn.Position = UDim2.new(0.52, 0, 0.5, 0)
-    modeBtn.AnchorPoint = Vector2.new(0, 0.5)
-    modeBtn.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+    modeBtn.Size = UDim2.new(0.18, 0, 0.7, 0)
+    modeBtn.Position = UDim2.new(0.78, -4, 0.15, 0)
+    modeBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
     modeBtn.BorderSizePixel = 0
     modeBtn.Text = sett.DefaultMode or "Toggle"
-    modeBtn.TextColor3 = Color3.fromRGB(138, 43, 226)
+    modeBtn.TextColor3 = Color3.fromRGB(100, 100, 100)
     modeBtn.TextSize = 11
-    modeBtn.Font = Enum.Font.GothamBold
+    modeBtn.Font = Enum.Font.GothamSemibold
     modeBtn.AutoButtonColor = false
     modeBtn.ZIndex = element.ZIndex + 2
-    modeBtn.Parent = element
+    modeBtn.Parent = cheatBase.Content
 
     local modeBtnCorner = Instance.new("UICorner")
-    modeBtnCorner.CornerRadius = UDim.new(0, 5)
+    modeBtnCorner.CornerRadius = UDim.new(0, 4)
     modeBtnCorner.Parent = modeBtn
 
     local currentMode = sett.DefaultMode or "Toggle"
@@ -5569,19 +5568,27 @@ function UILibrary.Section:BindKey(sett, keyCallback, modeCallback)
     local conn
 
     local function updateKeyText()
-        if type(currentKb) == "string" then
-            element.Text.Text = currentKb
-        elseif currentKb == Enum.KeyCode.Unknown then
+        if currentKb == Enum.KeyCode.Unknown then
             element.Text.Text = "..."
+        elseif type(currentKb) == "string" then
+            element.Text.Text = currentKb
         else
             element.Text.Text = currentKb.Name
         end
     end
 
-    -- Keybind логика (клик = начать слушать)
+    local function updateModeStyle()
+        if currentMode == "Hold" then
+            modeBtn.TextColor3 = Color3.fromRGB(180, 180, 180)
+            modeBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+        else
+            modeBtn.TextColor3 = Color3.fromRGB(100, 100, 100)
+            modeBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+        end
+    end
+
     setupEffects(element, element.HoverFrame):Connect(function()
         if rebinding then return end
-        -- Не реагируем если кликнули на modeBtn
         rebinding = true
         element.Text.Text = "[ ? ]"
 
@@ -5603,43 +5610,36 @@ function UILibrary.Section:BindKey(sett, keyCallback, modeCallback)
         end)
     end)
 
-    -- Mode кнопка: Toggle <-> Hold
     modeBtn.MouseButton1Click:Connect(function()
         currentMode = currentMode == "Toggle" and "Hold" or "Toggle"
         modeBtn.Text = currentMode
-        modeBtn.TextColor3 = currentMode == "Hold"
-            and Color3.fromRGB(0, 191, 255)
-            or  Color3.fromRGB(138, 43, 226)
+        updateModeStyle()
         if modeCallback then modeCallback(currentMode) end
     end)
 
     modeBtn.MouseEnter:Connect(function()
-        TweenService:Create(modeBtn, TI, { BackgroundColor3 = Color3.fromRGB(50, 50, 50) }):Play()
+        TweenService:Create(modeBtn, TI, { BackgroundColor3 = Color3.fromRGB(45, 45, 45) }):Play()
     end)
     modeBtn.MouseLeave:Connect(function()
-        TweenService:Create(modeBtn, TI, { BackgroundColor3 = Color3.fromRGB(35, 35, 35) }):Play()
+        updateModeStyle()
     end)
 
     updateKeyText()
+    updateModeStyle()
 
     functions.setValue = function(key)
         currentKb = key
         updateKeyText()
     end
-
     functions.setMode = function(mode)
         currentMode = mode
         modeBtn.Text = mode
-        modeBtn.TextColor3 = mode == "Hold"
-            and Color3.fromRGB(0, 191, 255)
-            or  Color3.fromRGB(138, 43, 226)
+        updateModeStyle()
     end
-
     functions.getValue = function() return currentKb end
     functions.getMode  = function() return currentMode end
 
     local meta = setmetatable({ element = element, UI = cheatBase }, functions)
-
     self.oldSelf.oldSelf.oldSelf.UI[self.oldSelf.oldSelf.categoryUI.Name][self.oldSelf.SectionName][
         self.Section.Name
     ][sett.Title] = meta
