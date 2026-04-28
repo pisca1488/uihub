@@ -5586,12 +5586,10 @@ function UILibrary.Section:BindKey(sett, keyCallback, modeCallback)
             return "..."
         end
         
-        -- Сокращения для мыши
+        -- Сокращения для мыши (только M1, M2, M3 - Roblox не поддерживает M4/M5)
         if key == Enum.UserInputType.MouseButton1 then return "M1" end
         if key == Enum.UserInputType.MouseButton2 then return "M2" end
         if key == Enum.UserInputType.MouseButton3 then return "M3" end
-        if key == Enum.UserInputType.MouseButton4 then return "M4" end
-        if key == Enum.UserInputType.MouseButton5 then return "M5" end
         
         -- Сокращения для клавиатуры
         local keyName = type(key) == "string" and key or key.Name
@@ -5652,26 +5650,11 @@ function UILibrary.Section:BindKey(sett, keyCallback, modeCallback)
             elseif input.UserInputType == Enum.UserInputType.MouseButton1 or
                    input.UserInputType == Enum.UserInputType.MouseButton2 or
                    input.UserInputType == Enum.UserInputType.MouseButton3 then
-                -- Поддержка кнопок мыши M1, M2, M3
+                -- Поддержка кнопок мыши M1, M2, M3 (M4/M5 не поддерживаются в Roblox)
                 currentKb = input.UserInputType
                 rebinding = false
                 updateKeyText()
                 conn:Disconnect()
-                if keyCallback then keyCallback(currentKb) end
-            end
-        end)
-        
-        -- Добавляем поддержку боковых кнопок мыши (M4, M5)
-        local mouseConn = game:GetService("UserInputService").InputBegan:Connect(function(input, gp)
-            if gp then return end
-            
-            if input.UserInputType == Enum.UserInputType.MouseButton4 or
-               input.UserInputType == Enum.UserInputType.MouseButton5 then
-                currentKb = input.UserInputType
-                rebinding = false
-                updateKeyText()
-                conn:Disconnect()
-                mouseConn:Disconnect()
                 if keyCallback then keyCallback(currentKb) end
             end
         end)
